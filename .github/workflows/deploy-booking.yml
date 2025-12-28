@@ -2,6 +2,8 @@ name: Deploy Booking Service
 
 on:
   push:
+    branches:
+      - master
     paths:
       - 'device-loan-booking-svc/**'
       - '.github/workflows/deploy-booking.yml'

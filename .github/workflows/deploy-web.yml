@@ -2,6 +2,8 @@ name: Deploy Web App to Azure Storage
 
 on:
   push:
+    branches:
+      - master
     paths:
       - 'device-loan-web/**'
       - '.github/workflows/deploy-web.yml'

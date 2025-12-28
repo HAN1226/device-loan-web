@@ -2,6 +2,8 @@ name: Deploy Inventory Service
 
 on:
   push:
+    branches:
+      - master
     paths:
       - 'device-loan-inventory-svc/**'
       - '.github/workflows/deploy-inventory.yml'
