@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  inventory-svc:
+    build: ./device-loan-inventory-svc
+    ports:
+      - "7071:80" # Azure Functions docker image listens on 80 by default
+    environment:
+      - AzureWebJobsSecretStorageType=files
+      - FUNCS_WORKER_RUNTIME=node
+
+  booking-svc:
+    build: ./device-loan-booking-svc
+    ports:
+      - "7072:80"
+    environment:
+      - AzureWebJobsSecretStorageType=files
+      - FUNCS_WORKER_RUNTIME=node
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
