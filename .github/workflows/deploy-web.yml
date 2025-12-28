@@ -41,4 +41,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-            az storage blob upload-batch --account-name ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} --auth-mode key -d '$web' -s ${{ env.SOURCE_DIR }}/dist --overwrite
+            az storage blob upload-batch --account-name ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} --auth-mode login -d '$web' -s ${{ env.SOURCE_DIR }}/dist --overwrite
