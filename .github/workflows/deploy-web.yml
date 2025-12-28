@@ -32,13 +32,8 @@ jobs:
         VITE_INVENTORY_API: ${{ secrets.VITE_INVENTORY_API }}
         VITE_BOOKING_API: ${{ secrets.VITE_BOOKING_API }}
 
-    - name: Log in with Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
     - name: Upload to Azure Storage
       uses: azure/CLI@v1
       with:
         inlineScript: |
-            az storage blob upload-batch --account-name ${{ env.AZURE_STORAGE_ACCOUNT_NAME }} --auth-mode login -d '$web' -s ${{ env.SOURCE_DIR }}/dist --overwrite
+            az storage blob upload-batch --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" -d '$web' -s ${{ env.SOURCE_DIR }}/dist --overwrite
