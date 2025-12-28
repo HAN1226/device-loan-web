@@ -1,0 +1,10 @@
+{
+  "name": "inventory-svc-dev",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:18",
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {}
+  },
+  "forwardPorts": [7071],
+  "postCreateCommand": "sudo npm install -g azure-functions-core-tools@4 && npm install",
+  "remoteUser": "node"
+}
