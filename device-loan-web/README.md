@@ -1,54 +1,51 @@
-<<<<<<< HEAD
-# device-loan-web
-=======
-# React + TypeScript + Vite
+# Campus Device Loan Web Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+The Campus Device Loan Web Application provides a browser-based interface for students and staff to interact with the Campus Device Loan System. It enables users to browse devices, make reservations, and perform staff operations where authorised.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The frontend does not contain business logic or security enforcement and communicates exclusively with backend services via HTTPS.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Features
 
-- Configure the top-level `parserOptions` property like this:
+- Device browsing and availability display
+- Secure user login via external identity provider
+- Reservation creation for student users
+- Staff-only interfaces for collection and return actions
+- Role-aware user interface rendering
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+---
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Architecture
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- Framework: React
+- Communication: HTTPS requests to backend APIs
+- Authentication: OAuth 2.0 / OpenID Connect via external provider
+- State Management: Client-side only (no persistent storage)
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
->>>>>>> ec67573 (init: device loan web frontend)
+The frontend is intentionally kept lightweight and delegates all business logic and security decisions to backend services.
+
+---
+
+## Security Considerations
+
+- The frontend does not store credentials
+- JWTs are obtained via the authentication provider
+- All access control is enforced server-side
+- UI-level role checks are for usability only
+
+---
+
+## Deployment
+
+- Deployed as a cloud-hosted web application
+- Automatically built and deployed via CI/CD pipeline
+- No local environment configuration is required for demonstration
+
+---
+
+## Notes
+
+The frontend is designed to support the assessed system scope. Advanced UI features and visual enhancements were deprioritised in favour of architectural clarity and backend security.
