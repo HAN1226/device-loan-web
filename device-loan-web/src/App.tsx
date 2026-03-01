@@ -1,29 +1,52 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { api } from './api';
 import { Device, Booking, User } from './types';
+import { DevicesService } from './api/services/devices.service';
+import { BookingsService } from './api/services/bookings.service';
+import { AuthService } from './api/services/auth.service';
+import { useRequest } from './hooks/useRequest';
+import { setClientPage } from './api/apiClient';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(false);
   const [notification, setNotification] = useState<{ msg: string, type: 'success' | 'error' } | null>(null);
 
   // Login State
   const [username, setUsername] = useState("");
   const [role, setRole] = useState<"student" | "staff">("student");
 
+  // page name for request tracing
   useEffect(() => {
-    fetchDevices();
+    setClientPage('Home');
+  }, []);
+
+  const devicesReq = useRequest<Device[]>(async (signal) => {
+    return DevicesService.list(signal);
+  }, []);
+
+  const bookingsReq = useRequest<Booking[], [string]>(async (signal, token: string) => {
+    return BookingsService.list(token, signal);
+  }, []);
+
+  useEffect(() => {
+    devicesReq.run().then((data) => {
+      if (data) setDevices(data);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (user) {
-      fetchBookings();
+      bookingsReq.run(user.token).then((data) => {
+        if (data) setBookings(data);
+      });
     } else {
       setBookings([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
@@ -37,23 +60,15 @@ function App() {
     setNotification({ msg, type });
   };
 
-  const fetchDevices = async () => {
-    try {
-      const data = await api.getDevices();
-      setDevices(data);
-    } catch (err) {
-      console.error(err);
-    }
+  const reloadDevices = async () => {
+    const data = await devicesReq.run();
+    if (data) setDevices(data);
   };
 
-  const fetchBookings = async () => {
+  const reloadBookings = async () => {
     if (!user) return;
-    try {
-      const data = await api.getBookings(user.token);
-      setBookings(data);
-    } catch (err) {
-      console.error(err);
-    }
+    const data = await bookingsReq.run(user.token);
+    if (data) setBookings(data);
   };
 
   const handleLogin = async () => {
@@ -62,10 +77,10 @@ function App() {
       return;
     }
     try {
-      const userData = await api.login(username, role);
+      const userData = await AuthService.login(username, role);
       setUser(userData);
       showNotify(`Welcome, ${userData.username}!`);
-    } catch (err) {
+    } catch {
       showNotify("Login failed", 'error');
     }
   };
@@ -76,30 +91,32 @@ function App() {
       return;
     }
     try {
-      setLoading(true);
-      await api.createBooking(user.token, device.partitionKey, device.rowKey);
-      await fetchDevices();
-      await fetchBookings();
+      setLoadingAction(true);
+      await BookingsService.create(user.token, device.partitionKey, device.rowKey);
+      await reloadDevices();
+      await reloadBookings();
       showNotify("Reservation successful!");
-    } catch (err: any) {
-      showNotify("Reservation failed: " + err.message, 'error');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showNotify("Reservation failed: " + msg, 'error');
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   };
 
   const handleManage = async (bookingId: string, action: "collect" | "return") => {
     if (!user) return;
     try {
-      setLoading(true);
-      await api.manageBooking(user.token, bookingId, action);
-      await fetchBookings();
-      await fetchDevices(); // Update inventory count
+      setLoadingAction(true);
+      await BookingsService.manage(user.token, bookingId, action);
+      await reloadBookings();
+      await reloadDevices(); // Update inventory count
       showNotify(`Device ${action}ed successfully!`);
-    } catch (err: any) {
-      showNotify(`Failed to ${action}: ` + err.message, 'error');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showNotify(`Failed to ${action}: ` + msg, 'error');
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   };
 
@@ -128,7 +145,7 @@ function App() {
               value={username} 
               onChange={e => setUsername(e.target.value)} 
             />
-            <select className="select-field" value={role} onChange={e => setRole(e.target.value as any)}>
+            <select className="select-field" value={role} onChange={e => setRole(e.target.value as 'student' | 'staff')}>
               <option value="student">Student</option>
               <option value="staff">Staff</option>
             </select>
@@ -144,6 +161,19 @@ function App() {
             <p className="subtitle">Browse and reserve equipment for your projects.</p>
           </div>
           
+          {devicesReq.loading && (
+            <div className="loading-state">Loading devices...</div>
+          )}
+          {!devicesReq.loading && devicesReq.error && (
+            <div className="error-state">
+              <div>{devicesReq.error.message}</div>
+              <button className="btn btn-outline" onClick={reloadDevices}>Retry</button>
+            </div>
+          )}
+          {!devicesReq.loading && !devicesReq.error && devices.length === 0 && (
+            <div className="empty-state">No devices available.</div>
+          )}
+          {!devicesReq.loading && !devicesReq.error && devices.length > 0 && (
           <div className="device-grid">
             {devices.map((d, i) => (
               <div key={i} className="device-card">
@@ -161,7 +191,7 @@ function App() {
                   <button 
                     className="btn btn-block btn-primary"
                     onClick={() => handleReserve(d)} 
-                    disabled={loading || d.availableQuantity === 0}
+                    disabled={loadingAction || d.availableQuantity === 0}
                   >
                     {d.availableQuantity > 0 ? 'Reserve Now' : 'Out of Stock'}
                   </button>
@@ -169,6 +199,7 @@ function App() {
               </div>
             ))}
           </div>
+          )}
         </section>
 
         {user && (
@@ -179,6 +210,16 @@ function App() {
             </div>
             
             <div className="table-container">
+              {bookingsReq.loading && (
+                <div className="loading-state">Loading bookings...</div>
+              )}
+              {!bookingsReq.loading && bookingsReq.error && (
+                <div className="error-state">
+                  <div>{bookingsReq.error.message}</div>
+                  <button className="btn btn-outline" onClick={reloadBookings}>Retry</button>
+                </div>
+              )}
+              {!bookingsReq.loading && !bookingsReq.error && (
               <table className="modern-table">
                 <thead>
                   <tr>
@@ -212,10 +253,10 @@ function App() {
                         <td>
                           <div className="action-buttons">
                             {b.status === 'Reserved' && (
-                              <button className="btn btn-sm btn-success" onClick={() => handleManage(b.rowKey, 'collect')} disabled={loading}>Collect</button>
+                              <button className="btn btn-sm btn-success" onClick={() => handleManage(b.rowKey, 'collect')} disabled={loadingAction}>Collect</button>
                             )}
                             {b.status === 'Collected' && (
-                              <button className="btn btn-sm btn-warning" onClick={() => handleManage(b.rowKey, 'return')} disabled={loading}>Return</button>
+                              <button className="btn btn-sm btn-warning" onClick={() => handleManage(b.rowKey, 'return')} disabled={loadingAction}>Return</button>
                             )}
                           </div>
                         </td>
@@ -224,6 +265,7 @@ function App() {
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
           </section>
         )}

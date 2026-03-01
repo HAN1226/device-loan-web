@@ -1,0 +1,28 @@
+- 页面: /
+  - pageName: Home
+  - 预期 API 请求:
+    - GET ${VITE_INVENTORY_API}/getDevices
+    - POST ${VITE_BOOKING_API}/login
+    - GET ${VITE_BOOKING_API}/bookings
+    - POST ${VITE_BOOKING_API}/bookings
+    - PUT ${VITE_BOOKING_API}/bookings/:id/collect
+    - PUT ${VITE_BOOKING_API}/bookings/:id/return
+  - 请求头包含:
+    - X-Client-Page: Home
+  - Network 面板检查:
+    - 打开页面时至少 1 条请求：GET /getDevices
+    - 登录后至少 1 条请求：GET /bookings
+    - 预定后：POST /bookings + GET /getDevices + GET /bookings
+    - 管理动作：PUT /bookings/:id/(collect|return) + 后续刷新请求
+  - 三态校验:
+    - Loading：设备与预定列表显示 loading-state
+    - Error：失败时显示错误提示与 Retry
+    - Empty：无数据时显示 empty-state
+  - 错误状态测试:
+    - 断网：应显示“网络错误/请求失败”，可点击 Retry
+    - 401：应显示“登录过期，请重新登录”
+    - 403：应显示“无权限访问该资源”
+    - 404：应显示“资源不存在”
+    - 5xx：应显示“服务异常，请稍后重试”
+  - 后端缺失 API:
+    - 无（基于当前页面）
